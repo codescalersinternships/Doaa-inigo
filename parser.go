@@ -26,8 +26,7 @@ func Checking(result string) bool {
 }
 
 type Inforamation struct {
-	Data map[string]map[string]string
-
+	Data     map[string]map[string]string
 	Comments [10]string
 }
 
@@ -46,11 +45,14 @@ func LoadFromFile(name string, info Inforamation) {
 }
 
 func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
+	var key string
+	var value string
+	d := make(map[string]map[string]string)
 
 	var section string
-	cont := make(map[string]string)
+	//cont := make(map[string]string)
 
-	m := make(map[string]map[string]string)
+	//m := make(map[string]map[string]string)
 	length := 0
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -66,6 +68,7 @@ func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
 
 		} else if Checking(items[0]) {
 			section = items[0]
+			d[section] = make(map[string]string)
 
 		} else if len(items) == 1 && items[0] == " " {
 			section = " "
@@ -75,26 +78,18 @@ func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
 			split_equal := strings.Split(line, "=")
 
 			if len(split_equal) == 2 {
-				cont[split_equal[0]] = split_equal[1]
-				m[section] = cont
-				//	info.Data = m
 
-				/*fmt.Println(cont)
-				fmt.Println("before_delete", m)
+				key = split_equal[0]
+				value = split_equal[1]
 
-				delete(cont, split_equal[0])
-				fmt.Println("after delete", cont)
-				fmt.Println("sub_map", m)*/
-			}
-			info.Data = m
-			for k := range cont {
-				delete(cont, k)
+				d[section][key] = value
+
 			}
 
 		}
 
 	}
-	//info.Data = m
+	info.Data = d
 	fmt.Println(info.Data)
 
 }
@@ -148,39 +143,8 @@ func check_org(org string) bool {
 
 func main() {
 
-	/*type SectionOptions = map[string]string
-	   INIFile = map[string]SectionOptions
-	   INI ={
-		"section1" : {
-			"key1": "val1"
-		},
-	   }*/
 	var info Inforamation
 	var name = "text.INI"
 	LoadFromFile(name, info)
 
-	/*Data := map[string]map[string]string{
-		"section1": {
-			"name": "doaa",
-			"age":  "21",
-		},
-		"section2": {
-			"key1":  "val1",
-			"key2 ": "val2"},
-	}
-	//sections := [2]string{"user","database"}
-	//dictionary1 := map[string]string{"test1": "this is just a test1", "key2": "value2"}
-	//dictionary2 := map[string]string{"test2": "this is just a test2"}
-	fmt.Println("return value 1 : ", Search(Data, "section1", "name"))
-	fmt.Println("return value 2 : ", Search(Data, "section2", "key1"))
-
-	Checking("jj")*/
-	//fmt.Println("checking", Checking("[hhk]"))
-
 }
-
-/*checking on section should begin with [ and end with ']'
-section name has only letters
-section must have key
-the key must have value
-*/
