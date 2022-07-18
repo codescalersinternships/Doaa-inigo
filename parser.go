@@ -12,15 +12,10 @@ import (
 func Checking(result string) bool {
 	regularExpression := regexp.MustCompile("[[a-z|A-Z]+]")
 	if regularExpression.MatchString(result) {
-		//fmt.Println("result is :", result, " pass")
 		return true
 
 	}
-	/*if !regularExpression.MatchString(result) {
 
-		//fmt.Println("result is :", result, " failed")
-		return false
-	}*/
 	return false
 
 }
@@ -50,14 +45,11 @@ func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
 	d := make(map[string]map[string]string)
 
 	var section string
-	//cont := make(map[string]string)
 
-	//m := make(map[string]map[string]string)
 	length := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		items := strings.Split(line, " ")
-		//fmt.Println("number of items:", len(items), items[0])
 
 		if items[0] == ";" {
 
@@ -146,5 +138,5 @@ func main() {
 	var info Inforamation
 	var name = "text.INI"
 	LoadFromFile(name, info)
-
+	//hey
 }
