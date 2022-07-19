@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -47,7 +46,7 @@ func (p *Parser) GetSectionNames() []string {
 	return keys
 }
 
-func (p *Parser) GetValue(section string, key string) (string, error) {
+func (p *Parser) Get(section string, key string) (string, error) {
 	if _, ok := p.Data[section]; !ok {
 		return "", errors.New("No section with this name")
 	}
@@ -57,17 +56,28 @@ func (p *Parser) GetValue(section string, key string) (string, error) {
 
 	return p.Data[section][key], nil
 }
+func (p *Parser) SearchSection(section string) (err error) {
+	_, ok := p.Data[section]
+	if !ok {
 
+		return errors.New("No section with this name")
+	}
+	return nil
+}
 func (p *Parser) SetSections(section string) {
 	_, ok := p.Data[section]
 	if !ok {
+		fmt.Println("setsections1")
+
 		p.Data[section] = make(map[string]string)
 	}
 	fmt.Println("setsections")
 }
+
 func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string) (err error) {
 
 	file, ferr := os.Create(name)
+	defer file.Close()
 	if ferr != nil {
 		return errors.New("can't open file with this name")
 	}
@@ -88,34 +98,35 @@ func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string
 	return nil
 }
 func (p *Parser) LoadFromFile(name string) error {
-	f, ferr := os.Open(name)
+	f, ferr := os.ReadFile(name)
 	fmt.Println("openedfile")
 	if ferr != nil {
 		return errors.New("can't open the file with this name")
 	}
 	//code to read file
-	content,err  :=io.ReadAll(f)
-	if err ....
+	//	content,err  :=io.ReadAll(f)
+	content := string(f)
 
 	return p.LoadFromString(string(content))
 }
 
-func (p *Parser) LoadFromString(content string) error {
+func (p *Parser) LoadFromString(content string) (err error) {
 
 	err = p.Parse(content)
+	return err
 	// fmt.Println(p.Data)
 	// p.SaveToFile("k.txt", p.Data)
 
 }
 
-func (p *Parser) Parse(content string) error {
+func (p *Parser) Parse(content string) (err error) {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 
 	var key string
 	var value string
 	var section string
 	SectionFlag := false
-	d := make(map[string]map[string]string)
+	//d := make(map[string]map[string]string)
 	//d = p.Data
 
 	for scanner.Scan() {
@@ -127,8 +138,8 @@ func (p *Parser) Parse(content string) error {
 			continue
 
 		} else if isValidSectionName(items[0]) {
-			p.SetSections(items[0])
 			section = items[0]
+			p.SetSections(section)
 			SectionFlag = true
 
 		} else if SectionFlag == true {
@@ -141,6 +152,8 @@ func (p *Parser) Parse(content string) error {
 
 				p.SetValues(section, key, value)
 
+			} else {
+				return errors.New("more than one value")
 			}
 
 		} else if len(items) == 1 {
@@ -148,12 +161,14 @@ func (p *Parser) Parse(content string) error {
 
 			}
 
+		} else {
+
+			return errors.New("Invalid input Name")
 		}
 
 	}
-	dictionary = d
 	p.SaveToFile("name.txt", p.Data)
-	return dictionary, err
+	return err
 }
 
 /*func check_name(name string) bool {
