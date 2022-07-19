@@ -2,14 +2,15 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
-	"unicode"
 )
 
-func Checking(result string) bool {
+func isValidSectionName(result string) bool {
 	regularExpression := regexp.MustCompile("[[a-z|A-Z]+]")
 	if regularExpression.MatchString(result) {
 		return true
@@ -20,64 +21,117 @@ func Checking(result string) bool {
 
 }
 
-type Inforamation struct {
-	Data     map[string]map[string]string
-	Comments [10]string
+type Parser struct {
+	Data map[string]map[string]string
+	//Comments [10]string
 }
 
-func GetSectionNames(D map[string]map[string]string) {
+func (p *Parser) SetValues(section, key, value string) {
+	if _, ok := p.Data[section]; !ok {
+		p.SetSections(section)
 
-	keys := make([]string, 0, len(D))
-	for k := range D {
+	}
+
+	p.Data[section][key] = value
+}
+
+func (p *Parser) GetSectionNames() []string {
+
+	keys := make([]string, 0, len(p.Data))
+	for k := range p.Data {
 		keys = append(keys, k)
 
 	}
 
 	fmt.Println("sections are :", keys)
+	return keys
 }
 
-func Get_value(dictionary map[string]map[string]string, section string, key string) string {
-	return dictionary[section][key]
-}
-
-func LoadFromFile(name string, info Inforamation) {
-	file, ferr := os.Open(name)
-	if ferr != nil {
-		panic(ferr)
+func (p *Parser) GetValue(section string, key string) (string, error) {
+	if _, ok := p.Data[section]; !ok {
+		return "", errors.New("No section with this name")
+	}
+	if _, ok := p.Data[section][key]; !ok {
+		return "", errors.New("No key with this name")
 	}
 
-	scanner := bufio.NewScanner(file)
-	LoadFromString(scanner, info)
+	return p.Data[section][key], nil
 }
 
-func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
+func (p *Parser) SetSections(section string) {
+	_, ok := p.Data[section]
+	if !ok {
+		p.Data[section] = make(map[string]string)
+	}
+	fmt.Println("setsections")
+}
+func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string) (err error) {
+
+	file, ferr := os.Create(name)
+	if ferr != nil {
+		return errors.New("can't open file with this name")
+	}
+	for k := range dictionary {
+		_, err := file.WriteString(k + "\n")
+		for key, value := range dictionary[k] {
+			file.WriteString(key + " = " + value + "\n")
+
+		}
+		file.WriteString("\n")
+		if err != nil {
+
+			return errors.New("can't open file with this name")
+
+		}
+
+	}
+	return nil
+}
+func (p *Parser) LoadFromFile(name string) error {
+	f, ferr := os.Open(name)
+	fmt.Println("openedfile")
+	if ferr != nil {
+		return errors.New("can't open the file with this name")
+	}
+	//code to read file
+	content,err  :=io.ReadAll(f)
+	if err ....
+
+	return p.LoadFromString(string(content))
+}
+
+func (p *Parser) LoadFromString(content string) error {
+
+	err = p.Parse(content)
+	// fmt.Println(p.Data)
+	// p.SaveToFile("k.txt", p.Data)
+
+}
+
+func (p *Parser) Parse(content string) error {
+	scanner := bufio.NewScanner(strings.NewReader(content))
+
 	var key string
 	var value string
-	d := make(map[string]map[string]string)
-
 	var section string
+	SectionFlag := false
+	d := make(map[string]map[string]string)
+	//d = p.Data
 
-	length := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		items := strings.Split(line, " ")
-
+		fmt.Println((items[0]))
 		if items[0] == ";" {
 
-			for i := 0; i < len(items); i++ {
-				info.Comments[length] = line
-			}
-			length++
+			continue
 
-		} else if Checking(items[0]) {
+		} else if isValidSectionName(items[0]) {
+			p.SetSections(items[0])
 			section = items[0]
-			d[section] = make(map[string]string)
+			SectionFlag = true
 
-		} else if len(items) == 1 && items[0] == " " {
-			section = " "
-
-		} else {
-
+		} else if SectionFlag == true {
 			split_equal := strings.Split(line, "=")
 
 			if len(split_equal) == 2 {
@@ -85,18 +139,24 @@ func LoadFromString(scanner *bufio.Scanner, info Inforamation) {
 				key = split_equal[0]
 				value = split_equal[1]
 
-				d[section][key] = value
+				p.SetValues(section, key, value)
+
+			}
+
+		} else if len(items) == 1 {
+			if items[0] == " " {
 
 			}
 
 		}
 
 	}
-	info.Data = d
-	fmt.Println(info.Data)
-
+	dictionary = d
+	p.SaveToFile("name.txt", p.Data)
+	return dictionary, err
 }
-func check_name(name string) bool {
+
+/*func check_name(name string) bool {
 	regularExpression := regexp.MustCompile("[a-z|A-Z]+")
 	if regularExpression.MatchString(name) {
 		return true
@@ -105,7 +165,6 @@ func check_name(name string) bool {
 	return false
 }
 
-//"1K345"
 func check_port(port string) bool {
 	for _, c := range port {
 		if !unicode.IsDigit(c) {
@@ -142,20 +201,19 @@ func check_org(org string) bool {
 
 	}
 	return false
-}
+}*/
 
 func main() {
-
-	var info Inforamation
+	Data := make(map[string]map[string]string)
+	var info Parser
 	var name = "text.INI"
-	LoadFromFile(name, info)
-	/*fmt.Println(info.Comments)
-	d := make(map[string]map[string]string)
+	info.LoadFromFile(name)
+	fmt.Println("printed from main", Data)
+	info.SaveToFile("name.txt", info.Data)
+	/*d := make(map[string]map[string]string)
 	d["database"] = make(map[string]string)
 	d["database"]["username"] = "abc"
 	d["database"]["password"] = "dmdm"
-	d["owner"] = make(map[string]string)
+	d["owner"] = make(map[string]string)*/
 
-	GetSectionNames(d)
-	fmt.Println(Get_value(d, "database", "username"))*/
 }
