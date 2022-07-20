@@ -118,7 +118,6 @@ func (p *Parser) LoadFromString(content string) (err error) {
 	}
 	p.Data, err = Parse(content)
 	p.SaveToFile("name.txt", p.Data)
-	//fmt.Println("error", p.Data)
 
 	return err
 
@@ -128,7 +127,7 @@ func checkLine(line string) (string, error) {
 	equal := strings.Split(line, " = ")
 	equal2 := strings.Split(line, "=")
 
-	if isValidSectionName(line) {
+	if isValidSectionName(line) && len(line) == 1 {
 		return "section", nil
 
 	} else if splits[0] == ";" {
@@ -154,7 +153,6 @@ func Parse(content string) (map[string]map[string]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		items := strings.Split(line, " ")
-		//fmt.Println((items[0]))
 		if items[0] == ";" {
 
 			continue
@@ -166,7 +164,6 @@ func Parse(content string) (map[string]map[string]string, error) {
 
 				ini[section] = make(map[string]string)
 			}
-			//p.SetSections(section)
 			SectionFlag = true
 
 		} else if SectionFlag == true {
@@ -177,7 +174,6 @@ func Parse(content string) (map[string]map[string]string, error) {
 
 				key = split_equal[0]
 				value = split_equal[1]
-				//p.SetValues(section, key, value)
 
 				ini[section][key] = value
 
@@ -185,13 +181,12 @@ func Parse(content string) (map[string]map[string]string, error) {
 
 				key = split_equal2[0]
 				value = split_equal2[1]
-				//p.SetValues(section, key, value)
 
 				ini[section][key] = value
 			} else if len(split_equal) > 2 || len(split_equal2) > 2 {
-				return nil, errors.New("more than one value")
+				return map[string]map[string]string{}, errors.New("more than one value")
 			} else if len(line) != 0 {
-				return nil, errors.New("Invalid input")
+				return map[string]map[string]string{}, errors.New("Invalid input")
 			}
 
 		} else if len(line) == 0 {
@@ -199,28 +194,9 @@ func Parse(content string) (map[string]map[string]string, error) {
 
 		} else {
 
-			return nil, errors.New("Invalid input")
+			return map[string]map[string]string{}, errors.New("Invalid input")
 		}
 
 	}
-	//p.SaveToFile("name.txt", p.Data)
 	return ini, nil
-}
-func main() {
-	//Data := make(map[string]map[string]string)
-	info := Parser{}
-	/*info.SetSections("user")
-	info.SetSections("doaa")
-	fmt.Println(info.GetSectionNames())*/
-	var name = "text.INI"
-	info.LoadFromFile(name)
-	//fmt.Println(checkLine("owner"))
-	//fmt.Println("printed from main", Data)
-	//info.SaveToFile("name.txt", info.Data)
-	/*d := make(map[string]map[string]string)
-	d["database"] = make(map[string]string)
-	d["database"]["username"] = "abc"
-	d["database"]["password"] = "dmdm"
-	d["owner"] = make(map[string]string)*/
-
 }
