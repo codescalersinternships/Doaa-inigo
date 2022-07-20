@@ -22,7 +22,6 @@ func isValidSectionName(result string) bool {
 
 type Parser struct {
 	Data map[string]map[string]string
-	//Comments [10]string
 }
 
 func (p *Parser) SetValues(section, key, value string) {
@@ -33,6 +32,10 @@ func (p *Parser) SetValues(section, key, value string) {
 
 	p.Data[section][key] = value
 }
+func (p *Parser) GetSections() map[string]map[string]string {
+
+	return p.Data
+}
 
 func (p *Parser) GetSectionNames() []string {
 
@@ -42,7 +45,6 @@ func (p *Parser) GetSectionNames() []string {
 
 	}
 
-	fmt.Println("sections are :", keys)
 	return keys
 }
 
@@ -65,13 +67,15 @@ func (p *Parser) SearchSection(section string) (err error) {
 	return nil
 }
 func (p *Parser) SetSections(section string) {
+	if len(p.Data) == 0 {
+		p.Data = map[string]map[string]string{}
+	}
 	_, ok := p.Data[section]
 	if !ok {
-		fmt.Println("setsections1")
 
 		p.Data[section] = make(map[string]string)
 	}
-	fmt.Println("setsections")
+
 }
 
 func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string) (err error) {
@@ -103,8 +107,7 @@ func (p *Parser) LoadFromFile(name string) error {
 	if ferr != nil {
 		return errors.New("can't open the file with this name")
 	}
-	//code to read file
-	//	content,err  :=io.ReadAll(f)
+
 	content := string(f)
 
 	return p.LoadFromString(string(content))
@@ -113,10 +116,26 @@ func (p *Parser) LoadFromFile(name string) error {
 func (p *Parser) LoadFromString(content string) (err error) {
 
 	err = p.Parse(content)
+	fmt.Println("error", err)
 	return err
-	// fmt.Println(p.Data)
-	// p.SaveToFile("k.txt", p.Data)
 
+}
+func checkLine(line string) (string, error) {
+	splits := strings.Split(line, " ")
+	equal := strings.Split(line, "=")
+	if isValidSectionName(splits[0]) {
+		return "section", nil
+
+	} else if splits[0] == ";" {
+		return "comment", nil
+
+	} else if line == "\n" {
+		return "empty", nil
+
+	} else if len(equal) == 2 {
+		return "KeyValue", nil
+	}
+	return "", errors.New("Invalid input")
 }
 
 func (p *Parser) Parse(content string) (err error) {
@@ -126,8 +145,6 @@ func (p *Parser) Parse(content string) (err error) {
 	var value string
 	var section string
 	SectionFlag := false
-	//d := make(map[string]map[string]string)
-	//d = p.Data
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -139,6 +156,8 @@ func (p *Parser) Parse(content string) (err error) {
 
 		} else if isValidSectionName(items[0]) {
 			section = items[0]
+
+			fmt.Println("section:", section)
 			p.SetSections(section)
 			SectionFlag = true
 
@@ -149,17 +168,14 @@ func (p *Parser) Parse(content string) (err error) {
 
 				key = split_equal[0]
 				value = split_equal[1]
-
 				p.SetValues(section, key, value)
 
-			} else {
+			} else if len(split_equal) > 2 {
 				return errors.New("more than one value")
 			}
 
-		} else if len(items) == 1 {
-			if items[0] == " " {
-
-			}
+		} else if len(line) == 0 {
+			continue
 
 		} else {
 
@@ -169,66 +185,4 @@ func (p *Parser) Parse(content string) (err error) {
 	}
 	p.SaveToFile("name.txt", p.Data)
 	return err
-}
-
-/*func check_name(name string) bool {
-	regularExpression := regexp.MustCompile("[a-z|A-Z]+")
-	if regularExpression.MatchString(name) {
-		return true
-
-	}
-	return false
-}
-
-func check_port(port string) bool {
-	for _, c := range port {
-		if !unicode.IsDigit(c) {
-			return false
-		}
-	}
-	return true
-}
-func check_FileName(name string) bool {
-
-	regularExpression := regexp.MustCompile("[.].[txt|dat]")
-	if regularExpression.MatchString(name) {
-		return true
-
-	}
-	return false
-}
-
-func check_server(server string) bool {
-
-	regularExpression := regexp.MustCompile("[0-9]+[.][0-9]+[.][0-9]+[.][0-9]+")
-	if regularExpression.MatchString(server) {
-		return true
-
-	}
-	return false
-}
-
-func check_org(org string) bool {
-
-	regularExpression := regexp.MustCompile("[a-z|A-Z]+[.]")
-	if regularExpression.MatchString(org) {
-		return true
-
-	}
-	return false
-}*/
-
-func main() {
-	Data := make(map[string]map[string]string)
-	var info Parser
-	var name = "text.INI"
-	info.LoadFromFile(name)
-	fmt.Println("printed from main", Data)
-	info.SaveToFile("name.txt", info.Data)
-	/*d := make(map[string]map[string]string)
-	d["database"] = make(map[string]string)
-	d["database"]["username"] = "abc"
-	d["database"]["password"] = "dmdm"
-	d["owner"] = make(map[string]string)*/
-
 }
