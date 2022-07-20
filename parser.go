@@ -3,13 +3,13 @@ package main
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
 )
 
 func isValidSectionName(result string) bool {
+	//if result[0] == '[' && result[len(result)-1] == ']' {
 	regularExpression := regexp.MustCompile("[[a-z|A-Z]+]")
 	if regularExpression.MatchString(result) {
 		return true
@@ -103,7 +103,6 @@ func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string
 }
 func (p *Parser) LoadFromFile(name string) error {
 	f, ferr := os.ReadFile(name)
-	fmt.Println("openedfile")
 	if ferr != nil {
 		return errors.New("can't open the file with this name")
 	}
@@ -114,16 +113,22 @@ func (p *Parser) LoadFromFile(name string) error {
 }
 
 func (p *Parser) LoadFromString(content string) (err error) {
+	if len(p.Data) == 0 {
+		p.Data = map[string]map[string]string{}
+	}
+	p.Data, err = Parse(content)
+	p.SaveToFile("name.txt", p.Data)
+	//fmt.Println("error", p.Data)
 
-	err = p.Parse(content)
-	fmt.Println("error", err)
 	return err
 
 }
 func checkLine(line string) (string, error) {
 	splits := strings.Split(line, " ")
-	equal := strings.Split(line, "=")
-	if isValidSectionName(splits[0]) {
+	equal := strings.Split(line, " = ")
+	equal2 := strings.Split(line, "=")
+
+	if isValidSectionName(line) {
 		return "section", nil
 
 	} else if splits[0] == ";" {
@@ -132,15 +137,15 @@ func checkLine(line string) (string, error) {
 	} else if line == "\n" {
 		return "empty", nil
 
-	} else if len(equal) == 2 {
+	} else if len(equal) == 2 || len(equal2) == 2 {
 		return "KeyValue", nil
 	}
-	return "", errors.New("Invalid input")
+	return " ", errors.New("Invalid input")
 }
 
-func (p *Parser) Parse(content string) (err error) {
+func Parse(content string) (map[string]map[string]string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(content))
-
+	ini := make(map[string]map[string]string)
 	var key string
 	var value string
 	var section string
@@ -149,29 +154,44 @@ func (p *Parser) Parse(content string) (err error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		items := strings.Split(line, " ")
-		fmt.Println((items[0]))
+		//fmt.Println((items[0]))
 		if items[0] == ";" {
 
 			continue
 
-		} else if isValidSectionName(items[0]) {
+		} else if isValidSectionName(line) {
 			section = items[0]
+			_, ok := ini[section]
+			if !ok {
 
-			fmt.Println("section:", section)
-			p.SetSections(section)
+				ini[section] = make(map[string]string)
+			}
+			//p.SetSections(section)
 			SectionFlag = true
 
 		} else if SectionFlag == true {
 			split_equal := strings.Split(line, "=")
+			split_equal2 := strings.Split(line, " = ")
 
 			if len(split_equal) == 2 {
 
 				key = split_equal[0]
 				value = split_equal[1]
-				p.SetValues(section, key, value)
+				//p.SetValues(section, key, value)
 
-			} else if len(split_equal) > 2 {
-				return errors.New("more than one value")
+				ini[section][key] = value
+
+			} else if len(split_equal2) == 2 {
+
+				key = split_equal2[0]
+				value = split_equal2[1]
+				//p.SetValues(section, key, value)
+
+				ini[section][key] = value
+			} else if len(split_equal) > 2 || len(split_equal2) > 2 {
+				return nil, errors.New("more than one value")
+			} else if len(line) != 0 {
+				return nil, errors.New("Invalid input")
 			}
 
 		} else if len(line) == 0 {
@@ -179,10 +199,28 @@ func (p *Parser) Parse(content string) (err error) {
 
 		} else {
 
-			return errors.New("Invalid input Name")
+			return nil, errors.New("Invalid input")
 		}
 
 	}
-	p.SaveToFile("name.txt", p.Data)
-	return err
+	//p.SaveToFile("name.txt", p.Data)
+	return ini, nil
+}
+func main() {
+	//Data := make(map[string]map[string]string)
+	info := Parser{}
+	/*info.SetSections("user")
+	info.SetSections("doaa")
+	fmt.Println(info.GetSectionNames())*/
+	var name = "text.INI"
+	info.LoadFromFile(name)
+	//fmt.Println(checkLine("owner"))
+	//fmt.Println("printed from main", Data)
+	//info.SaveToFile("name.txt", info.Data)
+	/*d := make(map[string]map[string]string)
+	d["database"] = make(map[string]string)
+	d["database"]["username"] = "abc"
+	d["database"]["password"] = "dmdm"
+	d["owner"] = make(map[string]string)*/
+
 }
