@@ -20,3 +20,9 @@ save file () invalidname
 get value
 search for non existing key , section
 */
+else if (line) == "\n" {
+	if items[0] == " " {
+		fmt.Print("empty")
+	}
+
+}
