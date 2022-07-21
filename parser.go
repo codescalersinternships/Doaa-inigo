@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -248,15 +247,4 @@ func (p *Parser) String() string {
 		initext += ("\n")
 	}
 	return initext
-}
-
-func main() {
-	p := Parser{}
-	text :=
-		"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
-			"\n" + "[database]\n"
-	p.LoadFromString(text)
-
-	fmt.Println(p.GetSectionNames())
-
 }
