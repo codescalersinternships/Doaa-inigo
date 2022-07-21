@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// check if the line is section have [ ] or not
+// return true if it is section or false if it isn't
 func isValidSectionName(result string) bool {
 	//if result[0] == '[' && result[len(result)-1] == ']' {
 	regularExpression := regexp.MustCompile("[[a-z|A-Z]+]")
@@ -20,10 +22,13 @@ func isValidSectionName(result string) bool {
 
 }
 
+// parser is struct have map to save the data of the ini file
+// has all the functions of the parser
 type Parser struct {
 	Data map[string]map[string]string
 }
 
+// set the key and value into map linked with the section
 func (p *Parser) SetValues(section, key, value string) {
 	if _, ok := p.Data[section]; !ok {
 		p.SetSections(section)
@@ -32,11 +37,16 @@ func (p *Parser) SetValues(section, key, value string) {
 
 	p.Data[section][key] = value
 }
+
+// get the map and return it
+
 func (p *Parser) GetSections() map[string]map[string]string {
 
 	return p.Data
 }
 
+// get all the sectionsNames [keys]of the map
+// return the kays
 func (p *Parser) GetSectionNames() []string {
 
 	keys := make([]string, 0, len(p.Data))
@@ -48,6 +58,7 @@ func (p *Parser) GetSectionNames() []string {
 	return keys
 }
 
+//get the value of existing section and key , otherwise return error
 func (p *Parser) Get(section string, key string) (string, error) {
 	if _, ok := p.Data[section]; !ok {
 		return "", errors.New("No section with this name")
@@ -58,6 +69,8 @@ func (p *Parser) Get(section string, key string) (string, error) {
 
 	return p.Data[section][key], nil
 }
+
+// search if section is exist or not
 func (p *Parser) SearchSection(section string) (err error) {
 	_, ok := p.Data[section]
 	if !ok {
@@ -66,6 +79,8 @@ func (p *Parser) SearchSection(section string) (err error) {
 	}
 	return nil
 }
+
+// create new key [section] and linked it with new map[string]string
 func (p *Parser) SetSections(section string) {
 	if len(p.Data) == 0 {
 		p.Data = map[string]map[string]string{}
@@ -78,6 +93,8 @@ func (p *Parser) SetSections(section string) {
 
 }
 
+// save all the valid data which stored in map
+// return error if the file can't be opened
 func (p *Parser) SaveToFile(name string) (err error) {
 
 	file, ferr := os.Create(name)
@@ -101,6 +118,9 @@ func (p *Parser) SaveToFile(name string) (err error) {
 	}
 	return nil
 }
+
+// try to open INIFile and get it's content
+// return error if the file can't be opened
 func (p *Parser) LoadFromFile(name string) error {
 	f, ferr := os.ReadFile(name)
 	if ferr != nil {
@@ -112,6 +132,8 @@ func (p *Parser) LoadFromFile(name string) error {
 	return p.LoadFromString(string(content))
 }
 
+//Inilize the map then call the parser and save to the file at the end
+// return error from the parser
 func (p *Parser) LoadFromString(content string) (err error) {
 	if len(p.Data) == 0 {
 		p.Data = map[string]map[string]string{}
@@ -122,6 +144,9 @@ func (p *Parser) LoadFromString(content string) (err error) {
 	return err
 
 }
+
+// check each line to determine if it is section , comment , KeyValue , empty or InvalidSyntax
+// return the type of the line and error if it is Invalid input
 func checkLine(line string) (string, error) {
 	splits := strings.Split(line, " ")
 	equal := strings.Split(line, " = ")
@@ -142,6 +167,9 @@ func checkLine(line string) (string, error) {
 	return " ", errors.New("Invalid input")
 }
 
+// extract sections , keys and values from the content then save it in a map
+// return map which has valid syntax of sections , keys and values
+// return error if the content contains Ivalid syntax
 func Parse(content string) (map[string]map[string]string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	ini := make(map[string]map[string]string)
