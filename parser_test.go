@@ -7,14 +7,14 @@ import (
 )
 
 func TestCheckLine(t *testing.T) {
-	t.Run("Invalid syntax", func(t *testing.T) {
+	t.Run("Invalid syntax for section name", func(t *testing.T) {
 		got, _ := checkLine("[[owner")
 		want := " "
 		if got != want {
 			t.Errorf("got: %q , want: %q", got, want)
 		}
 	})
-	t.Run("Invalid syntax", func(t *testing.T) {
+	t.Run("Invalid syntax for section name", func(t *testing.T) {
 		got, _ := checkLine("[section] ; comment")
 		want := " "
 		if got != want {
@@ -22,7 +22,7 @@ func TestCheckLine(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid syntax", func(t *testing.T) {
+	t.Run("Comment", func(t *testing.T) {
 		got, _ := checkLine("; hello i am Doaa")
 		want := "comment"
 		if got != want {
@@ -30,7 +30,7 @@ func TestCheckLine(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid syntax", func(t *testing.T) {
+	t.Run("Invalid syntax for KeyValue", func(t *testing.T) {
 		got, _ := checkLine("name = Doaa = amira ")
 		want := " "
 		if got != want {
@@ -40,12 +40,12 @@ func TestCheckLine(t *testing.T) {
 
 }
 func TestParse(t *testing.T) {
-	t.Run("ini text", func(t *testing.T) {
+	t.Run("key with no value", func(t *testing.T) {
 
 		text := "; last modified 1 April 2001 by John Doe\n" +
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
-			"server=192.0.2.62\n" + "port=143\n" + "file=payroll.dat\n"
+			"server=192.0.2.62\n" + "port=\n" + "file=payroll.dat\n"
 
 		got, err := Parse(text)
 		if err != nil {
@@ -58,7 +58,7 @@ func TestParse(t *testing.T) {
 		want["[owner]"]["organization"] = "Acme Widgets Inc."
 		want["[database]"] = make(map[string]string)
 		want["[database]"]["server"] = "192.0.2.62"
-		want["[database]"]["port"] = "143"
+		want["[database]"]["port"] = ""
 		want["[database]"]["file"] = "payroll.dat"
 		res1 := reflect.DeepEqual(got, want)
 		if !res1 {
@@ -67,7 +67,7 @@ func TestParse(t *testing.T) {
 		}
 
 	})
-	t.Run("ini text", func(t *testing.T) {
+	t.Run("section with no keys and values", func(t *testing.T) {
 
 		text :=
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
@@ -89,7 +89,7 @@ func TestParse(t *testing.T) {
 		}
 	})
 
-	t.Run("ini text", func(t *testing.T) {
+	t.Run("Invalid syntax for ini file", func(t *testing.T) {
 		text := " last modified 1 April = 2001 by John Doe\n" +
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
@@ -110,7 +110,7 @@ func TestParse(t *testing.T) {
 		text := "; last modified 1 April 2001 by John Doe\n" +
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
-			"server=192.0.2.62\n" + "port=143\n" + "file="
+			"server=192.0.2.62\n" + "port=143\n"
 		got, err := Parse(text)
 		if err != nil {
 			t.Error(fmt.Sprintf("Error in parsing: '%v'", err))
@@ -122,7 +122,7 @@ func TestParse(t *testing.T) {
 		want["[database]"] = make(map[string]string)
 		want["[database]"]["server"] = "192.0.2.62"
 		want["[database]"]["port"] = "143"
-		want["[database]"]["file"] = ""
+		//want["[database]"]["file"] = ""
 
 		res1 := reflect.DeepEqual(got, want)
 		if !res1 {
@@ -135,10 +135,22 @@ func TestParse(t *testing.T) {
 func TestGet(t *testing.T) {
 	parser := Parser{}
 
-	t.Run("CheckingValues", func(t *testing.T) {
-		parser.SetValues("owner", "salary", "h")
-		parser.SetValues("owner", "", "10000")
+	t.Run("Valid", func(t *testing.T) {
+		parser.SetValues("owner", "salary", "10000")
+		parser.SetValues("owner", "BankAcccount", "452")
 		got, _ := parser.Get("owner", "location")
+		want := ""
+
+		if got != want {
+			t.Errorf("got: %q , want: %q", got, want)
+
+		}
+
+	})
+	t.Run("search for non existing key", func(t *testing.T) {
+		parser.SetValues("owner", "salary", "10000")
+		parser.SetValues("owner", "BankAcccount", "452")
+		got, _ := parser.Get("Database", "salary")
 		want := ""
 
 		if got != want {
@@ -151,6 +163,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestLoadFromFile(t *testing.T) {
+
 	parser := Parser{}
 	t.Run("File Test", func(t *testing.T) {
 		//checking on existing file
@@ -165,7 +178,7 @@ func TestLoadFromFile(t *testing.T) {
 
 func TestGetSectionNames(t *testing.T) {
 	parser := Parser{}
-	t.Run("SectionsName", func(t *testing.T) {
+	t.Run("getSectionsName", func(t *testing.T) {
 
 		parser.SetValues("owner", "location", "Cairo")
 		parser.SetValues("database", "Salary", "10000")
@@ -181,7 +194,7 @@ func TestGetSectionNames(t *testing.T) {
 }
 func TestGetSections(t *testing.T) {
 	parser := Parser{}
-	t.Run("CheckingMap", func(t *testing.T) {
+	t.Run("get all the values", func(t *testing.T) {
 
 		parser.SetValues("[owner]", "location", "Cairo")
 		parser.SetValues("[database]", "Salary", "10000")

@@ -78,20 +78,20 @@ func (p *Parser) SetSections(section string) {
 
 }
 
-func (p *Parser) SaveToFile(name string, dictionary map[string]map[string]string) (err error) {
+func (p *Parser) SaveToFile(name string) (err error) {
 
 	file, ferr := os.Create(name)
 	defer file.Close()
 	if ferr != nil {
 		return errors.New("can't open file with this name")
 	}
-	for k := range dictionary {
+	for k := range p.Data {
 		_, err := file.WriteString(k + "\n")
-		for key, value := range dictionary[k] {
+		for key, value := range p.Data[k] {
 			file.WriteString(key + " = " + value + "\n")
 
 		}
-		file.WriteString("\n")
+		//file.WriteString("\n")
 		if err != nil {
 
 			return errors.New("can't open file with this name")
@@ -117,7 +117,7 @@ func (p *Parser) LoadFromString(content string) (err error) {
 		p.Data = map[string]map[string]string{}
 	}
 	p.Data, err = Parse(content)
-	p.SaveToFile("name.txt", p.Data)
+	p.SaveToFile("SavedFile.ini")
 
 	return err
 
