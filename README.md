@@ -33,7 +33,8 @@ file = "payroll.dat"`
 parser.LoadFromString(iniText)
 
 use parser.SetValues and sections("Section","Key","Value") to set keys and values to existing section
-use parser.Get() get all the keys and values of the map
+use parser.GetSections() get all the keys and values of the map
+use parser.Get("section","key") get value of the section and key 
 use parser.GetSectionsName() get all the keys of the map
 use parser.SetSections("section") create new section and link it with new map[string]string
 use parser.SaveToFile("file.ini") save all the keys and values of the map in file
