@@ -47,7 +47,7 @@ func TestParse(t *testing.T) {
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
 			"server=192.0.2.62\n" + "port=\n" + "file=payroll.dat\n"
 
-		got, err := Parse(text)
+		got, err := parse(text)
 		if err != nil {
 			t.Error(fmt.Sprintf("Error in parsing: '%v'", err))
 		}
@@ -73,7 +73,7 @@ func TestParse(t *testing.T) {
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
 				"\n" + "[database]\n"
 
-		got, err := Parse(text)
+		got, err := parse(text)
 		if err != nil {
 			t.Error(fmt.Sprintf("Error in parsing: '%v'", err))
 		}
@@ -95,7 +95,7 @@ func TestParse(t *testing.T) {
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
 			"server=192.0.2.62\n" + "port=143\n" + "file=payroll.dat\n"
 
-		got, _ := Parse(text)
+		got, _ := parse(text)
 
 		want := make(map[string]map[string]string)
 		res1 := reflect.DeepEqual(got, want)
@@ -111,7 +111,7 @@ func TestParse(t *testing.T) {
 			"[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" +
 			"\n" + "[database]\n" + "; use IP address in case network name resolution is not working\n" +
 			"server=192.0.2.62\n" + "port=143\n"
-		got, err := Parse(text)
+		got, err := parse(text)
 		if err != nil {
 			t.Error(fmt.Sprintf("Error in parsing: '%v'", err))
 		}
@@ -136,8 +136,8 @@ func TestGet(t *testing.T) {
 	parser := Parser{}
 
 	t.Run("Valid", func(t *testing.T) {
-		parser.SetValues("owner", "salary", "10000")
-		parser.SetValues("owner", "BankAcccount", "452")
+		text := "[owner]\n" + "salary=10000\n" + "BankAcccount=452\n"
+		parser.LoadFromString(text)
 		got, _ := parser.Get("owner", "location")
 		want := ""
 
@@ -148,8 +148,8 @@ func TestGet(t *testing.T) {
 
 	})
 	t.Run("search for non existing key", func(t *testing.T) {
-		parser.SetValues("owner", "salary", "10000")
-		parser.SetValues("owner", "BankAcccount", "452")
+		text := "[owner]\n" + "salary=10000\n" + "BankAcccount=452\n"
+		parser.LoadFromString(text)
 		got, _ := parser.Get("Database", "salary")
 		want := ""
 
@@ -179,11 +179,11 @@ func TestLoadFromFile(t *testing.T) {
 func TestGetSectionNames(t *testing.T) {
 	parser := Parser{}
 	t.Run("getSectionsName", func(t *testing.T) {
+		text := "[owner]\n" + "name=John Doe\n" + "organization=Acme Widgets Inc.\n" + "\n" + "[database]\n"
 
-		parser.SetValues("owner", "location", "Cairo")
-		parser.SetValues("database", "Salary", "10000")
+		parser.LoadFromString(text)
 		got := parser.GetSectionNames()
-		want := []string{"owner", "database"}
+		want := []string{"[owner]", "[database]"}
 		res := reflect.DeepEqual(got, want)
 		if !res {
 			t.Errorf("got: %q , want: %q", got, want)
@@ -192,14 +192,13 @@ func TestGetSectionNames(t *testing.T) {
 	})
 
 }
+
 func TestGetSections(t *testing.T) {
 	parser := Parser{}
 	t.Run("get all the values", func(t *testing.T) {
 
-		parser.SetValues("[owner]", "location", "Cairo")
-		parser.SetValues("[database]", "Salary", "10000")
-		parser.SetValues("[database]", "port", "143")
-
+		text := "[owner]\n" + "location=Cairo\n" + "\n" + "[database]\n" + "Salary=10000\n" + "port=143\n"
+		parser.LoadFromString(text)
 		got := parser.GetSections()
 		want := make(map[string]map[string]string)
 		want["[owner]"] = make(map[string]string)
@@ -218,11 +217,16 @@ func TestGetSections(t *testing.T) {
 func TestSearchSection(t *testing.T) {
 	parser := Parser{}
 	t.Run("SearchForSectionsNames", func(t *testing.T) {
-		parser.SetValues("[owner]", "location", "Cairo")
-		parser.SetValues("[database]", "Salary", "10000")
-		got := parser.SearchSection("[owner]")
-		if got != nil {
+		text := "[owner]\n" + "location=Cairo\n" + "\n" + "[database]\n" + "Salary=10000\n" + "port=143\n"
+		parser.LoadFromString(text)
+
+		got, err := parser.SearchSection("[owner]")
+		if err != nil {
 			t.Errorf("Inavalid")
+
+		}
+		if !got {
+			t.Errorf("got: %q ", "false")
 
 		}
 

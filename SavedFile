@@ -1,6 +1,6 @@
 [owner]
-name  =  John Doe 
 organization  =  Acme Widgets Inc.
+name  =  John Doe 
 
 [database]
 server  =  192.0.2.62     
